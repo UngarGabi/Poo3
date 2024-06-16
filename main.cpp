@@ -8,6 +8,14 @@ enum TipClient{
     Normal = 1, Student = 2, Pensionar = 3, Handicap = 4
 };
 
+enum Jocuri{
+    Blackjack = 1, Zar = 2, Pacanele = 3
+};
+
+enum Simboluri{
+    Cirese = 1, Portocala = 2, Lamaie = 3, Struguri = 4, Steluta = 5
+};
+
 // Metoda Strategy
 class Jeton {
 protected:
@@ -85,7 +93,7 @@ public:
     }
 
     static void BunVenit(){
-        std::cout << "Bun venit la Arcade, distractie placuta.";
+        std::cout << "Bun venit la Arcade, distractie placuta." << '\n';
     }
 
     static int CeFelDeClient(){
@@ -106,12 +114,17 @@ private:
     double buget;
     std::vector<Jeton*> ListaJetoane;
     std::string tipClient;
+    int nrPuncte;
 public:
     Client() = default;
     Client(std::string nume, double buget, std::string tipClient) {
         this->nume = nume;
         this->buget = buget;
         this->tipClient = tipClient;
+        this->nrPuncte = 0;
+    }
+    void AdaugaPuncte(int nrPct){
+        nrPuncte += nrPct;
     }
 
     template <typename T>
@@ -127,6 +140,13 @@ public:
                 break;
             }
         }
+    }
+    int getNrJetoane(){
+        return ListaJetoane.size();
+    }
+    ~Client(){
+        for(Jeton* jeton : ListaJetoane)
+            delete jeton;
     }
 
     friend std::istream& operator>>(std::istream& in, Client& client);
@@ -148,6 +168,7 @@ public:
     virtual void AfiseazaCarti() = 0;
     virtual bool VerificaTragere() = 0;
     virtual int SumaCarti() = 0;
+    virtual void Reset() = 0;
     virtual void Win() = 0;
 };
 
@@ -159,7 +180,7 @@ public:
     void ExtrageCarte() override {
         int CarteExtrasa = std::rand() % 11 + 1;
         Carti.push_back(CarteExtrasa);
-        std::cout << "Cartea extrasa de dealer este: " << CarteExtrasa << '\n';
+        std::cout << "Dealer-ul a tras o carte." << '\n';
     }
 
     void AfiseazaCarti() override {
@@ -185,6 +206,9 @@ public:
 
     void Win() override {
         std::cout << "Dealer-ul a castigat!" << '\n';
+    }
+    void Reset() override{
+        Carti.clear();
     }
 };
 
@@ -227,6 +251,9 @@ public:
     void Win() override {
         std::cout << "Player-ul a castigat!" << '\n';
     }
+    void Reset() override {
+        Carti.clear();
+    }
 };
 
 class BlackJack {
@@ -240,17 +267,20 @@ private:
         if (p <= 21 && d <= 21) {
             if (p > d)
                 player->Win();
-            else if (p == d)
-                std::cout << "Remiza" << '\n';
             else
-                dealer->Win();
-        } else {
+                if (p == d)
+                    std::cout << "Remiza" << '\n';
+                else
+                    dealer->Win();
+        }
+        else {
             if (p > 21 && d <= 21)
                 dealer->Win();
-            else if (p <= 21 && d > 21)
-                player->Win();
             else
-                std::cout << "Remiza" << '\n';
+                if (p <= 21 && d > 21)
+                    player->Win();
+                else
+                    std::cout << "Remiza" << '\n';
         }
     }
 
@@ -262,6 +292,9 @@ public:
         bool MaiSeTrageCarteDealer = true;
         int numarTure = 0;
 
+        player->Reset();
+        dealer->Reset();
+
         std::cout << "Bun venit la BlackJack, va uram mult noroc!" << '\n';
         std::cout << "---------------------------------------------------------" << '\n';
         std::cout << '\n';
@@ -269,10 +302,8 @@ public:
         while (MaiSeTrageCartePlayer || MaiSeTrageCarteDealer) {
             if (MaiSeTrageCarteDealer) {
                 dealer->ExtrageCarte();
-                dealer->AfiseazaCarti();
                 if (dealer->SumaCarti() > 21) {
                     MaiSeTrageCarteDealer = false;
-                    std::cout << "Suma este mai mare decat 21, dealer-ul nu mai poate trage carti." << '\n';
                 } else {
                     MaiSeTrageCarteDealer = dealer->VerificaTragere();
                     if(!MaiSeTrageCarteDealer)
@@ -290,6 +321,8 @@ public:
                     MaiSeTrageCartePlayer = player->VerificaTragere();
                 }
             }
+            std::cout << "Catrile dealer-ului" << '\n';
+            dealer->AfiseazaCarti();
             std::cout << '\n';
             std::cout << "Tura " << ++numarTure << " s-a terminat." << '\n';
             std::cout << '\n';
@@ -298,6 +331,132 @@ public:
         }
         std::cout << "Jocul s-a terminat, ";
         Castigator();
+    }
+    ~BlackJack(){
+        delete player;
+        delete dealer;
+    }
+};
+
+class Zaruri{
+private:
+    void Castigator(std::pair<int, int> a, std::pair<int, int> b) {
+        int sum1 = a.first + a.second;
+        int sum2 = b.first + b.second;
+        bool PrimaPerecheEgala = false;
+        bool ADouaPerecheEgala = false;
+
+        if (a.first == a.second)
+            PrimaPerecheEgala = true;
+
+        if (b.first == b.second)
+            bool ADouaPerecheEgala = true;
+
+        if (PrimaPerecheEgala && ADouaPerecheEgala) {
+            if (sum1 == sum2)
+                std::cout << "Remiza" << '\n';
+            else
+                if (sum1 > sum2)
+                    std::cout << "Player" << '\n';
+                else
+                    std::cout << "Dealer" << '\n';
+        }
+        else
+            if (PrimaPerecheEgala && !ADouaPerecheEgala)
+                std::cout << "Player" << '\n';
+            else
+                if (!PrimaPerecheEgala && ADouaPerecheEgala)
+                    std::cout << "Dealer" << '\n';
+                else {
+                    if (sum1 > sum2)
+                        std::cout << "Player" << '\n';
+                    else
+                        if (sum1 < sum2)
+                            std::cout << "Dealer" << '\n';
+                        else
+                            std::cout << "Remiza" << '\n';
+        }
+    }
+
+public:
+    std::pair<int, int> aruncaZaruri() {
+        int zar1 = std::rand() % 6 + 1;
+        int zar2 = std::rand() % 6 + 1;
+        std::pair<int, int> zaruri = std::make_pair(zar1, zar2);
+        return zaruri;
+    }
+    void Play(){
+        std::pair<int, int> zaruri1 = aruncaZaruri();
+        std::pair<int, int> zaruri2 = aruncaZaruri();
+
+        std::cout << "Player: " << zaruri1.first << ", " << zaruri1.second << '\n';
+        std::cout << "Dealer: " << zaruri2.first << ", " << zaruri2.second << '\n';
+
+        Castigator(zaruri1, zaruri2);
+    }
+};
+
+class Pacanea {
+private:
+    std::vector<int> display;
+    void MesajBunVenit() {
+        std::cout << "1 jeton = 5 rotiri." << '\n';
+        std::cout << "Apasati pe . pentru a roti." << "\n";
+    }
+
+    void Roll() {
+        int elem1 = std::rand() % 5 + 1;
+        int elem2 = std::rand() % 5 + 1;
+        int elem3 = std::rand() % 5 + 1;
+        display = {elem1, elem2, elem3};
+    }
+
+    void AfisarePacanea() {
+        std::cout << "| ";
+        for (const auto &simbol: display) {
+            switch (simbol) {
+                case Cirese:
+                    std::cout << "🍒" << " | ";
+                    break;
+                case Portocala:
+                    std::cout << "🍊" << " | ";
+                    break;
+                case Lamaie:
+                    std::cout << "🍋" << " | ";
+                    break;
+                case Struguri:
+                    std::cout << "🍇" << " | ";
+                    break;
+                case Steluta:
+                    std::cout << "⭐" << " | ";
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    void Castig() {
+        if (display[0] == display[1] && display[1] == display[2])
+            std::cout << "Castigator" << '\n';
+        else
+            std::cout << "Necastigator" << '\n';
+    }
+public:
+    void Play(){
+        MesajBunVenit();
+        int rotiri = 5;
+        while(rotiri != 0) {
+            std::string Space;
+            std::cin >> Space;
+            if (Space == ".") {
+                Roll();
+                AfisarePacanea();
+                std::cout << '\n';
+                Castig();
+            }
+            rotiri--;
+        }
     }
 };
 
@@ -350,9 +509,55 @@ int main() {
 
     Player player;
     Dealer dealer;
-    BlackJack joc(&player, &dealer);
+    BlackJack jocBlackJack(&player, &dealer);
 
-    joc.Play();
+    Zaruri jocZar;
+
+    Pacanea jocPacanea;
+
+    int NrJetoane = client.getNrJetoane();
+    bool MaiJoaca = true;
+    while(MaiJoaca) {
+        NrJetoane--;
+        int alegeJoc;
+        std::cout << "Ce joc vreti sa jucati?" << '\n';
+        std::cout << "1. BlackJack" << '\n';
+        std::cout << "2. Zaruri" << '\n';
+        std::cout << "3. Pacanea" << '\n';
+        std::cin >> alegeJoc;
+
+        switch(alegeJoc) {
+            case Blackjack:
+                jocBlackJack.Play();
+                break;
+            case Zar:
+                jocZar.Play();
+                break;
+            case Pacanele:
+                jocPacanea.Play();
+                break;
+            default:
+                std::cout << "Ati introdus gresit." << '\n';
+                break;
+        }
+
+        if (NrJetoane == 0) {
+            MaiJoaca = false;
+            std::cout << "Nu mai aveti jetoane." << '\n';
+        }
+        else {
+            std::string continuaJoc;
+            std::cout << "Doriti sa mai jucat(Da/Nu)?" << '\n';
+            std::cin >> continuaJoc;
+            if (continuaJoc == "nu" || continuaJoc == "Nu")
+                MaiJoaca = false;
+        }
+    }
+
+
 
     return 0;
 }
+// De facut:
+// Delay cand intri in joc la BlackJack
+//Sis de pct
